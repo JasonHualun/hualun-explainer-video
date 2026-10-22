@@ -9,7 +9,7 @@ const E = require("./engine");
 
 const DEPS = process.env.WHITEBOARD_DEPS || path.join(os.homedir(), "Tools/envs/whiteboard-video");
 const GAP = 0.15, ERASE = 0.7;
-const HEAD = { x: 64, y: 34, size: 34 };
+const HEAD = { x: 64, y: 34, size: 34 * E.TS };
 
 // ---------- 分镜接口：b.title / b.section / b.say / b.erase ----------
 function storyboard(file) {
@@ -17,7 +17,7 @@ function storyboard(file) {
   let pendingErase = [];
   const flat = ds => ds.flat(Infinity).filter(Boolean).flatMap(d => d.strokes);
   const heading = (str) => {
-    const t = E.text(str, HEAD.x, HEAD.y, { size: HEAD.size });
+    const t = E.text(str, HEAD.x, HEAD.y, { size: HEAD.size, raw: true });
     return E.group(t, E.underline(t, { w: 3 })).strokes.map(s => ({ ...s, heading: true }));
   };
   const b = {
@@ -35,7 +35,7 @@ function storyboard(file) {
         const strokes = E.text(`${i + 1}. ${s}`, 110, y, { size: 30 }).strokes;
         if (lines[i]) beats.push({ say: lines[i], strokes });
         else beats.at(-1).strokes.push(...strokes);
-        y += 56;
+        y += 56 * E.TS;
       });
       pendingErase = ["all"];
     },
@@ -66,11 +66,16 @@ function layout() {
       { ylabel: "价格", xlabel: "数量", ...o }),
     // 右侧笔记：一行行往下记，不用算 y；可以带一个小图（{ doodle: (x, y) => … }，x/y 为这一行左上角）
     note(str, o = {}) {
-      const size = o.size || 30, x = RIGHT.x0 + (o.indent || 0);
+      const size = (o.size || 30) * E.TS, x = RIGHT.x0 + (o.indent || 0);
       const parts = [];
       let h = size;
       if (o.doodle) { const d = o.doodle(x, ny); parts.push(d); h = Math.max(h, d.bottom - ny); }
-      if (str) parts.push(E.text(str, o.doodle ? x + (o.doodleW || 90) : x, ny + (h - size) / 2, { size, color: o.color }));
+      if (str) {  // 放不下右区就整行等比缩小，不出板
+        const tx = o.doodle ? x + (o.doodleW || 90) : x;
+        let t = E.text(str, tx, ny + (h - size) / 2, { size, color: o.color, raw: true });
+        if (t.right > RIGHT.x1) { const s2 = size * (RIGHT.x1 - tx) / (t.right - tx); t = E.text(str, tx, ny + (h - s2) / 2, { size: s2, color: o.color, raw: true }); }
+        parts.push(t);
+      }
       ny += h + (o.gap ?? 26);
       return E.group(...parts);
     },
@@ -79,11 +84,11 @@ function layout() {
     eraseNotes() { this.erase(RIGHT); ny = RIGHT.y0 + 10; },
     // 公式：方括号里的部分单独拿出来，好标注，如 formula("Q_{d} = [a] - [b] · P") → f.parts.a
     formula(src, x, y, o = {}) {
-      const size = o.size || 56, parts = {}, ds = [];
+      const size = (o.size || 56) * E.TS, parts = {}, ds = [];
       let cx = x;
       for (const seg of src.split(/(\[[^\]]+\])/).filter(Boolean)) {
         const key = seg.startsWith("[") ? seg.slice(1, -1) : null;
-        const t = E.text(key || seg, cx, y, { size, color: o.color });
+        const t = E.text(key || seg, cx, y, { size, color: o.color, raw: true });
         if (key) parts[key] = t;
         ds.push(t); cx = t.right;
       }
@@ -92,9 +97,9 @@ function layout() {
     },
     // 给某一部分加注释：箭头从注释指过去，注释自动放在下方（或上方）错开
     note_on(part, str, o = {}) {
-      const up = o.dir === "up", dx = o.dx || 0, size = o.size || 26;
+      const up = o.dir === "up", dx = o.dx || 0, size = (o.size || 26) * E.TS;
       const ty = up ? part.top - 90 - size : part.bottom + 70 + (o.dy || 0);
-      const t = E.text(str, part.cx - 40 + dx, ty, { size, color: o.color });
+      const t = E.text(str, part.cx - 40 + dx, ty, { size, color: o.color, raw: true });
       const a = E.arrow(t.left + 40, up ? t.bottom + 6 : t.top - 6, part.cx, up ? part.top - 6 : part.bottom + 6, { color: o.color });
       return E.group(a, t);
     },

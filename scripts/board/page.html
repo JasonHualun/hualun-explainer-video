@@ -10,11 +10,20 @@
   <defs>
     <radialGradient id="gc" cx="50%" cy="48%" r="72%"><stop offset="0" stop-color="#26493a"/><stop offset=".75" stop-color="#21402f"/><stop offset="1" stop-color="#1a3326"/></radialGradient>
     <filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
-      <feTurbulence type="fractalNoise" baseFrequency="1.8" numOctaves="2" seed="3" result="n"/>
-      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.6 1.72" result="m"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="3" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -3.8 2.35" result="m"/>
       <feComposite in="SourceGraphic" in2="m" operator="in" result="c"/>
-      <feTurbulence type="turbulence" baseFrequency=".35" numOctaves="1" seed="5" result="w"/>
-      <feDisplacementMap in="c" in2="w" scale="1.0"/>
+      <feTurbulence type="turbulence" baseFrequency=".3" numOctaves="1" seed="5" result="w"/>
+      <feDisplacementMap in="c" in2="w" scale="2"/>
+    </filter>
+    <filter id="chalkt" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -2.2 1.95" result="m"/>
+      <feComposite in="SourceGraphic" in2="m" operator="in" result="c"/>
+      <feMorphology in="SourceGraphic" operator="erode" radius=".8" result="core"/>
+      <feMerge result="mm"><feMergeNode in="c"/><feMergeNode in="core"/></feMerge>
+      <feTurbulence type="turbulence" baseFrequency=".35" numOctaves="1" seed="6" result="w"/>
+      <feDisplacementMap in="mm" in2="w" scale="1"/>
     </filter>
     <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="11"/>
       <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 -.4"/></filter>
@@ -30,6 +39,7 @@
   </g>
   <rect id="tray" x="80" y="622" width="1120" height="8" fill="#b8bcc2"/>
   <g id="ink" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+  <g id="inkt" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
   <g id="eraser" filter="url(#shadow)" visibility="hidden">
     <rect x="-60" y="-28" width="120" height="40" rx="8" fill="#5b4636"/>
     <rect x="-60" y="10" width="120" height="16" rx="4" fill="#d9d6cf"/>
@@ -62,8 +72,9 @@ window.setTheme = (name) => {
   $("smudge").innerHTML = '<rect x="30" y="20" width="1220" height="602" filter="url(#grain)"/>';
   $("tray").setAttribute("fill", "#4a3727"); $("tray").setAttribute("y", "624"); $("tray").setAttribute("height", "5");
   $("ink").setAttribute("filter", "url(#chalk)"); $("ink").setAttribute("opacity", ".93");
+  $("inkt").setAttribute("filter", "url(#chalkt)"); $("inkt").setAttribute("opacity", ".95");
   $("marker").setAttribute("visibility", "hidden"); $("chalkstick").setAttribute("visibility", "visible");
-  $("sub").style.color = "#e9e6da";
+  $("sub").style.color = "#e9e6da"; $("sub").style.fontSize = "29px";
   window.CHALK = true;
 };
 
@@ -79,13 +90,13 @@ window.boot = (plan) => {
       s.a = { x: s.x, y: s.y + s.size * 0.6 }; s.b = { x: s.x + s.size, y: s.y + s.size * 0.6 };
     } else {
       el = document.createElementNS(NS, "path");
-      el.setAttribute("d", s.d); el.setAttribute("stroke", s.color); el.setAttribute("stroke-width", window.CHALK ? s.w * 1.35 + 0.6 : s.w);
-      $("ink").appendChild(el);
+      el.setAttribute("d", s.d); el.setAttribute("stroke", s.color); el.setAttribute("stroke-width", window.CHALK ? (s.txt ? s.w * 1.25 + 0.5 : s.w * 1.8 + 1) : s.w);
+      $(s.txt ? "inkt" : "ink").appendChild(el);
       s.len = el.getTotalLength() + 0.01;
       el.style.strokeDasharray = s.len; el.style.strokeDashoffset = s.len;
       s.a = el.getPointAtLength(0); s.b = el.getPointAtLength(s.len);
     }
-    if (s.font) $("ink").appendChild(el);
+    if (s.font) $("inkt").appendChild(el);
     s.el = el; s.last = -1; s.gone = false;
   }
   return true;

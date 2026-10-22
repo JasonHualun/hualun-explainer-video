@@ -13,6 +13,8 @@ const THEME = process.env.WHITEBOARD_THEME || "whiteboard";
 const COLORS = THEME === "chalkboard"
   ? { ink: "#f2f0e6", blue: "#a9d3ec", red: "#f2b3b0", green: "#c2e3a8", gray: "#b8c4bc", orange: "#f3d496" }
   : { ink: "#1f2328", blue: "#2456c9", red: "#d23a3a", green: "#2e8b57", gray: "#6b7179", orange: "#e07a1f" };
+// 黑板风字更大（手机上看得清）；o.raw=true 表示调用方已经换算过
+const TS = THEME === "chalkboard" ? Number(process.env.BOARD_TEXT_SCALE || 1.4) : 1;
 const BOARD = { x0: 30, y0: 20, x1: 1250, y1: 622 };
 const PUNCT = { "：": ":", "，": ",", "。": ".", "？": "?", "！": "!", "（": "(", "）": ")", "；": ";", "、": ",",
   "−": "-", "–": "-", "—": "-", "×": "x", "·": ".", "“": '"', "”": '"', "‘": "'", "’": "'" };
@@ -60,7 +62,7 @@ const stroke = (pts, color, w, speed = 800, kind = "line") =>
 // ---------- 基本笔画 ----------
 function text(str, x, y, o = {}) {
   // y 是这行字的顶边；支持 "Q_{d}" 下标、"x^{2}" 上标
-  const size = o.size || 32, color = o.color || "ink", out = [];
+  const size = (o.size || 32) * (o.raw ? 1 : TS), color = o.color || "ink", out = [];
   let cx = x;
   const runs = [];
   str.replace(/([_^])\{([^}]*)\}|([^_^]+|[_^])/g, (m, k, inner, plain) => runs.push(k ? { s: inner, k } : { s: plain }));
@@ -98,6 +100,7 @@ function text(str, x, y, o = {}) {
       }
     }
   }
+  out.forEach(st => { st.txt = true; });
   const d = new Drawn(out);
   d.box = { x0: x, y0: y, x1: Math.max(cx, x), y1: y + size };  // 文字按行框计算，方便排版
   return d;
@@ -195,4 +198,4 @@ function axes(x0, y0, w, h, o = {}) {
 }
 
 module.exports = { text, line, arrow, dash, curve, ellipse, circleAround, underline, box, group, stick, bottle, mountain, axes,
-  COLORS, BOARD, Drawn };
+  COLORS, BOARD, Drawn, TS };
