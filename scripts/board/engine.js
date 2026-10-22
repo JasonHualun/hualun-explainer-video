@@ -8,7 +8,11 @@ const DEPS = process.env.WHITEBOARD_DEPS || path.join(require("os").homedir(), "
 const HANZI = path.join(DEPS, "node_modules/hanzi-writer-data");
 const FELIX = require(path.join(DEPS, "node_modules/hersheytext")).getFontData("ems_felix");
 
-const COLORS = { ink: "#1f2328", blue: "#2456c9", red: "#d23a3a", green: "#2e8b57", gray: "#6b7179", orange: "#e07a1f" };
+// 板面主题：WHITEBOARD_THEME=chalkboard 为黑板粉笔风（默认 whiteboard 白板马克笔风）。分镜里的颜色名不变，只换实际色值
+const THEME = process.env.WHITEBOARD_THEME || "whiteboard";
+const COLORS = THEME === "chalkboard"
+  ? { ink: "#f2f0e6", blue: "#8cc8f0", red: "#f59a9a", green: "#a8e08c", gray: "#b9c2bc", orange: "#f7c96b" }
+  : { ink: "#1f2328", blue: "#2456c9", red: "#d23a3a", green: "#2e8b57", gray: "#6b7179", orange: "#e07a1f" };
 const BOARD = { x0: 30, y0: 20, x1: 1250, y1: 622 };
 const PUNCT = { "：": ":", "，": ",", "。": ".", "？": "?", "！": "!", "（": "(", "）": ")", "；": ";", "、": ",",
   "−": "-", "–": "-", "—": "-", "×": "x", "·": ".", "“": '"', "”": '"', "‘": "'", "’": "'" };

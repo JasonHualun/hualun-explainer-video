@@ -59,6 +59,10 @@ cp -R hualun-explainer-video ~/.claude/skills/   # Claude Code；Codex、Cursor 
 bash scripts/render_board.sh examples/supply_demand_board.js --draft
 bash scripts/render_board.sh examples/supply_demand_board.js --final
 
+# 黑板粉笔风（AI 老师用黑板给你上课）：加 --theme chalkboard
+bash scripts/render_board.sh examples/supply_demand_board.js --draft --theme chalkboard
+# 换 edge 音色，如童声：EXPLAINER_TTS=edge EXPLAINER_EDGE_VOICE=zh-CN-XiaoyiNeural
+
 # Manim 路线（换主题：EXPLAINER_THEME=3b1b / retro / pixel）
 bash scripts/render.sh examples/supply_demand.py SupplyDemand --draft
 ```

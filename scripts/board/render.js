@@ -175,6 +175,7 @@ async function render(file, audioFile, work, draft) {
     const browser = await chromium.launch({ executablePath: path.join(cacheDir, exe, "chrome-headless-shell-mac-arm64/chrome-headless-shell") });
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: draft ? 0.75 : 1.5 });
     await page.goto("file://" + path.join(__dirname, "page.html"));
+    await page.evaluate(n => window.setTheme(n), process.env.WHITEBOARD_THEME || "whiteboard");
     await page.evaluate(p => window.boot(p), plan);
     const out = path.join(work, `seg${k}.mp4`);
     const ff = spawn("ffmpeg", ["-y", "-v", "error", "-f", "image2pipe", "-framerate", String(FPS), "-i", "-",

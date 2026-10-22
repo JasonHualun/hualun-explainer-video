@@ -1,7 +1,7 @@
 #!/bin/bash
 # 白板马克笔风一键渲染（不走 Manim）：分镜.js → 配音 → 网页逐帧画 → 贴配音并逐句核对 → 成片。
 #
-# 用法：render_board.sh <集目录>/分镜.js [--draft] [--final] [--tts clone|edge] [--rate +5%]
+# 用法：render_board.sh <集目录>/分镜.js [--draft] [--final] [--tts clone|edge] [--rate +5%] [--theme whiteboard|chalkboard]
 #   --draft  低清快速预览（960×540，15 帧），输出 <集目录>/草稿.mp4
 #   默认     1920×1080，30 帧，输出 <集目录>/<主题>.mp4
 #   --final  核对通过后删除 .work/ 和草稿，只留 分镜.js + 成片
@@ -16,6 +16,7 @@ while [ $# -gt 0 ]; do
     --final) FINAL=1; shift ;;
     --tts)   export EXPLAINER_TTS="$2"; shift 2 ;;
     --rate)  export EXPLAINER_RATE="$2"; shift 2 ;;
+    --theme) export WHITEBOARD_THEME="$2"; shift 2 ;;
     *) echo "未知参数: $1" >&2; exit 1 ;;
   esac
 done
