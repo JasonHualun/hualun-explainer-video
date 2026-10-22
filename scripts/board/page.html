@@ -8,15 +8,16 @@
 <body>
 <svg width="1280" height="720" viewBox="0 0 1280 720">
   <defs>
-    <radialGradient id="gc" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#2f4a3c"/><stop offset="1" stop-color="#1f3229"/></radialGradient>
+    <radialGradient id="gc" cx="50%" cy="48%" r="72%"><stop offset="0" stop-color="#26493a"/><stop offset=".75" stop-color="#21402f"/><stop offset="1" stop-color="#1a3326"/></radialGradient>
     <filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
-      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="n"/>
-      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -2.2 1.75" result="m"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.8" numOctaves="2" seed="3" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.6 1.72" result="m"/>
       <feComposite in="SourceGraphic" in2="m" operator="in" result="c"/>
-      <feDisplacementMap in="c" in2="n" scale="2.2"/>
+      <feTurbulence type="turbulence" baseFrequency=".35" numOctaves="1" seed="5" result="w"/>
+      <feDisplacementMap in="c" in2="w" scale="1.0"/>
     </filter>
-    <filter id="dust"><feTurbulence type="fractalNoise" baseFrequency=".012 .05" numOctaves="3" seed="9"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 -.15"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="11"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 -.4"/></filter>
     <radialGradient id="g" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#fdfdfb"/><stop offset="1" stop-color="#eceeee"/></radialGradient>
     <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
     <filter id="shadow"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity=".25"/></filter>
@@ -35,7 +36,7 @@
   </g>
   <g id="pen" filter="url(#shadow)">
     <g id="chalkstick" transform="rotate(35)" visibility="hidden">
-      <rect x="-7" y="-70" width="14" height="70" rx="5" id="chalkbody"/>
+      <rect x="-5" y="-46" width="10" height="46" rx="3" id="chalkbody"/>
     </g>
     <g id="marker" transform="rotate(35)">
       <path d="M0 0 L-6 -16 L6 -16 Z" id="tip"/>
@@ -54,13 +55,15 @@ const $ = id => document.getElementById(id);
 
 window.setTheme = (name) => {
   if (name !== "chalkboard") return;
-  document.body.style.background = "#4a3424";                       // 木框外墙
-  $("board").setAttribute("fill", "url(#gc)"); $("board").setAttribute("stroke", "#7a5532"); $("board").setAttribute("stroke-width", "14");
-  $("smudge").setAttribute("filter", "url(#dust)"); $("smudge").innerHTML = '<rect x="30" y="20" width="1220" height="602"/>';
-  $("smudge").setAttribute("opacity", ".3");
-  $("tray").setAttribute("fill", "#6b4a2c"); $("tray").setAttribute("height", "12");
-  $("ink").setAttribute("filter", "url(#chalk)");
+  document.body.style.background = "#14231b";
+  $("board").setAttribute("fill", "url(#gc)"); $("board").setAttribute("stroke", "#5a4330"); $("board").setAttribute("stroke-width", "5");
+  $("board").setAttribute("rx", "2");
+  $("smudge").removeAttribute("filter"); $("smudge").setAttribute("opacity", ".05");
+  $("smudge").innerHTML = '<rect x="30" y="20" width="1220" height="602" filter="url(#grain)"/>';
+  $("tray").setAttribute("fill", "#4a3727"); $("tray").setAttribute("y", "624"); $("tray").setAttribute("height", "5");
+  $("ink").setAttribute("filter", "url(#chalk)"); $("ink").setAttribute("opacity", ".93");
   $("marker").setAttribute("visibility", "hidden"); $("chalkstick").setAttribute("visibility", "visible");
+  $("sub").style.color = "#e9e6da";
   window.CHALK = true;
 };
 
@@ -76,7 +79,7 @@ window.boot = (plan) => {
       s.a = { x: s.x, y: s.y + s.size * 0.6 }; s.b = { x: s.x + s.size, y: s.y + s.size * 0.6 };
     } else {
       el = document.createElementNS(NS, "path");
-      el.setAttribute("d", s.d); el.setAttribute("stroke", s.color); el.setAttribute("stroke-width", window.CHALK ? s.w * 1.3 : s.w);
+      el.setAttribute("d", s.d); el.setAttribute("stroke", s.color); el.setAttribute("stroke-width", window.CHALK ? s.w * 1.35 + 0.6 : s.w);
       $("ink").appendChild(el);
       s.len = el.getTotalLength() + 0.01;
       el.style.strokeDasharray = s.len; el.style.strokeDashoffset = s.len;
