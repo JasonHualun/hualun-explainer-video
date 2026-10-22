@@ -30,7 +30,7 @@ python3 "$HERE/board_audio.py" "$WORK/says.json" "$WORK/audio_cache" "$WORK/audi
 CLIP_STORYBOARD="$SB" node "$HERE/clip/render.js" "$WORK"
 python3 "$HERE/mux_audio.py" "$WORK/silent.mp4" "$WORK/timeline.json" "$WORK/voice.mp4"
 "$VENV/bin/python" "$HERE/clip/sound.py" "$WORK" "$SB" "$WORK/voice.mp4" "$OUT"
-echo "完成：$OUT（$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | cut -d. -f1) 秒）"
+echo "完成：${OUT}（$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | cut -d. -f1) 秒）"
 
 if [ "$FINAL" = 1 ]; then
   rm -rf "$WORK" "$EP/草稿.mp4"

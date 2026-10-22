@@ -14,7 +14,7 @@ metadata:
 
 ## 原理（一句话）
 
-AI 写分镜代码 → 一帧帧算出**无声画面**并记下每句旁白的开始秒数 → 共享语音 `hualun-local-tts` 配旁白 → ffmpeg 按秒数把每句贴回去并**逐句核对有声** → 成片。没有任何收费 API。
+AI 写分镜代码 → 一帧帧算出**无声画面**并记下每句旁白的开始秒数 → 配旁白（默认免费 edge-tts，有本地配音 Skill 时用本地克隆声音）→ ffmpeg 按秒数把每句贴回去并**逐句核对有声** → 成片。没有任何收费 API。
 
 画面有两条路，配音、字幕、核对共用：
 - **Manim 路线**（王虹手写 / 3B1B / 复古 / 像素）：`分镜.py` + `scripts/render.sh`
@@ -35,10 +35,10 @@ AI 写分镜代码 → 一帧帧算出**无声画面**并记下每句旁白的�
 | TinyTeX（含 fontspec、unicode-math、lm-math） | `~/Library/TinyTeX` | 只负责 `MathTex` 公式排版，字母/数字/加减等号的字体跟随主题；没有公式用不到 |
 | ffmpeg | Homebrew | 贴配音、量时长、核对 |
 | 缝合像素字体 Fusion Pixel（OFL 开源） | `~/Library/Fonts/fusion-pixel-12px-proportional-zh_hans.otf` | 仅像素游戏风使用 |
-| 白板路线依赖：playwright-core、汉字笔画数据 hanzi-writer-data（Arphic 开源，九千多字、真实笔顺）、单线手写英文字体 hersheytext（EMS Felix） | `~/Tools/envs/whiteboard-video/node_modules`（不放进 Vault） | 白板风逐帧截图、中文按笔顺写、英文数字公式单线写 |
+| 白板路线依赖：playwright-core、汉字笔画数据 hanzi-writer-data（Arphic 开源，九千多字、真实笔顺）、单线手写英文字体 hersheytext（EMS Felix） | `~/Tools/envs/whiteboard-video/node_modules` | 白板风逐帧截图、中文按笔顺写、英文数字公式单线写 |
 | 无头浏览器 Chromium | `~/Library/Caches/ms-playwright/chromium_headless_shell-*` | 白板风截图 |
-| 片段路线引擎：花叔 huashu-art-motion 副本（MIT，2026-10-10 快照；已改：角色换暹罗猫、删花叔形象与示范片） | `~/Tools/apps/花伦动画引擎`（不放进 Vault） | 8 种解说语法的画面；复用白板路线的 playwright-core 和无头浏览器，不另装 Python 依赖 |
-| 配音 | 共享 Skill `hualun-local-tts` | `clone`=本人克隆声音（VoxCPM2，默认，用「播音女王」音色 `explainer-profile.json`）；`edge`=Hermes 云夏（`--tts edge`） |
+| 片段路线引擎：花叔 huashu-art-motion 副本（MIT，2026-10-10 快照；已改：角色换暹罗猫、删花叔形象与示范片） | `~/Tools/apps/花伦动画引擎` | 8 种解说语法的画面；复用白板路线的 playwright-core 和无头浏览器，不另装 Python 依赖 |
+| 配音 | 默认 `edge-tts`（`pip install edge-tts`，免费需联网，音色 `EXPLAINER_EDGE_VOICE`，默认 zh-CN-XiaoxiaoNeural）；可选本地配音 Skill `hualun-local-tts`（`EXPLAINER_TTS_SKILL` 指向其 scripts 目录） | `edge`=edge-tts（零配置默认）；`clone`=本地克隆声音（VoxCPM2，声音档案 `EXPLAINER_VOICE_PROFILE`；检测到本地 Skill 时自动启用） |
 
 ## 风格（Manim 四套的唯一真源：`scripts/theme.py`；白板风在 `scripts/board/`）
 
@@ -103,10 +103,10 @@ AI 写分镜代码 → 一帧帧算出**无声画面**并记下每句旁白的�
    - 时间不写秒：cue 默认在这句开口时揭开；`"word": "某词"` 落在念到这个词时（`number` 是落定时刻）；`"offset": 秒` 相对这句开头；`"hold": 秒` 这句后留白（反应镜头、包袱定住靠它）；没有 `say` 的行是纯画面停顿；段尾 `"tail"`（默认 0.3 秒）
    - storytime 口型自动读本地配音的音量包络；字幕白字黑边画在底部，画面按 `safe.bottom` 让开（storytime 的角色身体不让，字幕压在身上读得清）
    - 一段 3–8 秒放 2–5 个 cue 最舒服；有截图时 `image` 写相对 `分镜.json` 的路径
-   - **音效和背景音乐自动加**（`scripts/clip/sound.py`）：素材和音量直接用自动剪辑项目 `视频剪辑MVP` 的 `library/音效/`、`library/音乐/` 和 `config.json「声音」`，不另存一份；音效按 cue 自动配（段间硬切「嗖」、主词砸进「咚」、？！和气泡「嘀」、打字「哒」、大字砸出「砰」），重音对准画面那一帧；音乐在 `分镜.json` 顶层写 `"music": "搞笑"`（搞笑/温和/科技/紧张/轻快，`"无"` = 不要），说话时自动压低。**搞笑片一律 `"music": "搞笑"`**，音效自动换成搞笑那套（气泡「啵」、问号「弹」、反应镜头蟋蟀叫、开场一声猫叫、最后一个包袱配鼓点 + 失败长号）；其他内容也想用搞笑音效时加 `"sfx": "搞笑"`
+   - **音效和背景音乐自动加**（`scripts/clip/sound.py`）：素材和音量来自外部素材库（环境变量 `HUALUN_VIDEO_PROJECT`，含 `library/音效/`、`library/音乐/` 和 `config.json「声音」`，本仓库不附带）；音效按 cue 自动配（段间硬切「嗖」、主词砸进「咚」、？！和气泡「嘀」、打字「哒」、大字砸出「砰」），重音对准画面那一帧；音乐在 `分镜.json` 顶层写 `"music": "搞笑"`（搞笑/温和/科技/紧张/轻快，`"无"` = 不要），说话时自动压低。**搞笑片一律 `"music": "搞笑"`**，音效自动换成搞笑那套（气泡「啵」、问号「弹」、反应镜头蟋蟀叫、开场一声猫叫、最后一个包袱配鼓点 + 失败长号）；其他内容也想用搞笑音效时加 `"sfx": "搞笑"`
 2. 草稿：`bash scripts/render_clip.sh <集目录>/分镜.json --draft` → `草稿.mp4`（1280×720，15 帧；50 秒一集画面约 1 分钟，新旁白配音另需 1–2 分钟）
 3. 抽帧自检同上；成片：`bash scripts/render_clip.sh <集目录>/分镜.json --final [--tts edge]`
-- storytime 的角色固定是**花伦的暹罗猫**（代码画：奶油色胖身体，面罩/耳朵/爪子/尾巴深棕，蓝眼睛；设定真源 `视频剪辑MVP/ip.json`），画法在引擎副本 `lib/toon.js` 的 `TOON.bean`。原作者花叔的形象已从副本删除，不要再引入
+- storytime 的角色固定是**花伦的暹罗猫**（代码画：奶油色胖身体，面罩/耳朵/爪子/尾巴深棕，蓝眼睛；设定真源在素材库的 `ip.json`），画法在引擎副本 `lib/toon.js` 的 `TOON.bean`。原作者花叔的形象已从副本删除，不要再引入
 
 ## 讲解深度与内容规矩
 
@@ -116,19 +116,19 @@ AI 写分镜代码 → 一帧帧算出**无声画面**并记下每句旁白的�
 - 学习场景下，内容只取自该书蒸馏三件套；没有蒸馏材料时在旁白或交付说明里注明「通用知识讲解」
 - 一集 60–150 秒为宜；内容多就分板块，仍超 3 分钟就拆集
 - **公式不能光秃秃出现**：每个符号用箭头标注「在本例里代表什么 + 单位」，再代入本例数字，最后把结果指回图上的点（见示范分镜 ⑥ 的 `note()`）。图上数值关系尽量取整数
-- 声音默认用「播音女王」音色：本人 2026-10-06 录音室模式录的激情讲述腔（`~/Tools/voices/user-primary/explainer-profile.json`，和 Heard 播报的档案分开）；这个音色适合讲解，撒娇等柔软情绪试过不行。clone 要加载约 5GB 模型，首次配音比 edge 慢
-- **旁白要写出情绪**（2026-10-10 用户反馈：平铺叙述的台词，播音女王念出来没感情）：多用「！」「？」、语气词（呢、啊、吧、呃……）和停顿逗号，少写「看见……」这类平叙；克隆模型每次生成语气有随机，个别句子平就改写那句再配
-- 语速默认 `+0%`。换声音：环境变量 `EXPLAINER_VOICE_PROFILE=<同目录下的档案名>`，或 `--tts edge` 改回云夏；档案格式见 `hualun-local-tts`
+- 声音：默认 edge-tts；有本地配音 Skill 时用克隆声音（档案由 `EXPLAINER_VOICE_PROFILE` 指定）。clone 要加载约 5GB 模型，首次配音比 edge 慢
+- **旁白要写出情绪**（平铺叙述的台词念出来没感情）：多用「！」「？」、语气词（呢、啊、吧、呃……）和停顿逗号，少写「看见……」这类平叙；TTS 每次生成语气可能有随机，个别句子平就改写那句再配
+- 语速默认 `+0%`。换声音：环境变量 `EXPLAINER_VOICE_PROFILE=<同目录下的档案名>`，edge 音色用 `EXPLAINER_EDGE_VOICE`；`--tts edge|clone` 强制指定引擎
 
 ## 存放规则（不乱放）
 
 | 场景 | 集目录 |
 |---|---|
-| 学习法 | `~/.hermes/learning/[领域名]/progress-assets/解释视频/YYYY-MM-DD-主题/` |
+| 学习法 | `<学习法目录>/[领域名]/progress-assets/解释视频/YYYY-MM-DD-主题/` |
 | 其他正式使用 | `~/Movies/解释视频/YYYY-MM-DD-主题/` |
 | 试做、测试、调样式 | 会话临时目录，不进上面两处 |
 | 用户说「留」的案例 | `~/Movies/解释视频/案例/YYYY-MM-DD-主题/`（只放分镜 + 成片） |
 
 - 正式集目录 `--final` 后只留 `分镜.py` / `分镜.js` / `分镜.json`（便于以后改）和 `<主题>.mp4`
 - **测试产物默认清理，不用用户提醒**：每次任务结束前，把这次试做产生的草稿、成片、抽帧图、音频缓存、`.work/`、试验脚本全部删掉；只有用户明确说「留」「这个当案例」的，才挪进上面的案例目录（只留分镜和成片）。用户还没看过的成片，先发给用户、交付说明里写明「看完不留就删」，下次开工时清掉
-- 一律不写进 Obsidian Vault；音频、中间画面只在 `.work/` 里，成片后自动清掉
+- 不写进笔记库；音频、中间画面只在 `.work/` 里，成片后自动清掉

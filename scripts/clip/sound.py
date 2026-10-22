@@ -2,7 +2,7 @@
 
 用法：sound.py 工作目录 分镜.json 有配音的成片.mp4 输出.mp4
 
-素材与音量都不在这里另存一份，直接用自动剪辑项目「视频剪辑MVP」的：
+素材与音量来自外部素材库目录（环境变量 HUALUN_VIDEO_PROJECT 指定，本仓库不附带）：
   音效库 library/音效/<类>/（嗖 咚 砰 嘀 哒 扫 乱码，重音时刻缓存 .分析.json）
   音乐库 library/音乐/<情绪>/（温和 科技 紧张 轻快）
   音量  config.json「声音」
@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-PROJ = Path(os.environ.get("HUALUN_VIDEO_PROJECT", Path.home() / "Documents/Codex/projects/视频剪辑MVP"))
+PROJ = Path(os.environ.get("HUALUN_VIDEO_PROJECT", Path.home() / "hualun-sound-library")).expanduser()
 LIB = PROJ / "library"
 CFG = json.load(open(PROJ / "config.json", encoding="utf-8"))["声音"]
 PEAK = json.load(open(LIB / "音效/.分析.json", encoding="utf-8")) if (LIB / "音效/.分析.json").exists() else {}

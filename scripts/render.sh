@@ -38,7 +38,7 @@ cd "$WORK"
 SRC="$WORK/media/videos/$(basename "$SCENE_FILE" .py)/$QDIR/$SCENE.mp4"
 [ -f "$SRC" ] || { echo "渲染失败，去掉 grep 重跑看完整报错" >&2; exit 1; }
 python3 "$HERE/mux_audio.py" "$SRC" "$EXPLAINER_TIMELINE" "$OUT"
-echo "完成：$OUT（$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | cut -d. -f1) 秒）"
+echo "完成：${OUT}（$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT" | cut -d. -f1) 秒）"
 
 if [ "$FINAL" = 1 ]; then
   rm -rf "$WORK" "$EP/草稿.mp4"

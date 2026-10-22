@@ -11,10 +11,8 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from audio_key import ENGINE, PROFILE, RATE, atempo, key  # noqa: E402
-
-TTS_SKILL = Path.home() / ".hermes/skills/hualun-local-tts/scripts"
-VOXCPM = Path(os.environ.get("VOXCPM_DIR", Path.home() / "Tools/apps/voxcpm2"))
+from audio_key import ENGINE, PROFILE, TTS_SKILL, VOXCPM, atempo, key  # noqa: E402
+from tts_edge import speak  # noqa: E402
 
 
 def lines(scene_file):
@@ -30,7 +28,7 @@ def lines(scene_file):
 
 
 def generate(texts, cache):
-    """把缺的旁白音频补齐（edge 逐句调共享配音；clone 模型只加载一次批量生成）。"""
+    """把缺的旁白音频补齐（edge 逐句合成；clone 模型只加载一次批量生成）。"""
     cache = Path(cache).resolve()
     cache.mkdir(parents=True, exist_ok=True)
     todo = [{"text": t, "out": str(cache / key(t))} for t in dict.fromkeys(texts) if not (cache / key(t)).exists()]
@@ -39,10 +37,7 @@ def generate(texts, cache):
         return
     if ENGINE == "edge":
         for j in todo:
-            for _ in range(2):  # 网络偶发失败重试一次
-                if subprocess.run(["bash", str(TTS_SKILL / "speak.sh"), j["text"], j["out"], "--rate", RATE]).returncode == 0:
-                    break
-            else:
+            if not speak(j["text"], j["out"]):
                 sys.exit(f"配音失败：{j['text']}")
         return
     raw = [{"text": j["text"], "out": j["out"] + ".raw.wav"} for j in todo]

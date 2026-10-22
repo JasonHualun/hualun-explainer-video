@@ -1,7 +1,7 @@
 """花伦解释视频底座（Manim）。
 
 每集分镜继承 NarratedScene，用 self.say("旁白", 动画...) 推进：
-- 旁白音频来自共享语音 hualun-local-tts（clone=本人克隆声音，默认，由 render.sh 预生成；edge=Hermes 云夏）
+- 旁白音频：edge=免费 edge-tts（零配置默认，渲染时现生成）；clone=本地配音 Skill 的克隆声音（可选，由 render.sh 预生成）
 - 量出音频时长，让动画和停顿刚好填满这句话
 - 屏幕底部同步显示这句字幕
 简笔画素材从 doodles 导入，不在分镜里各画各的。
@@ -14,11 +14,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from manim import *  # noqa: E402
-from audio_key import ENGINE, RATE, key  # noqa: E402
+from audio_key import ENGINE, key  # noqa: E402
+from tts_edge import speak  # noqa: E402
 from doodles import *  # noqa: E402,F401
 from theme import T, tex_preamble  # noqa: E402
 
-SPEAK = Path.home() / ".hermes/skills/hualun-local-tts/scripts/speak.sh"
 CACHE = Path(os.environ.get("EXPLAINER_AUDIO_CACHE", "audio_cache"))
 FONT = T.font
 GAP = 0.15  # 每句话后的留白（秒）
@@ -37,9 +37,8 @@ def tts(text: str) -> Path:
         return out
     if ENGINE != "edge":
         raise RuntimeError(f"缺少 {ENGINE} 音频，请用 render.sh 渲染（会先批量预生成）：{text}")
-    for _ in range(2):  # 网络偶发失败重试一次
-        if subprocess.run(["bash", str(SPEAK), text, str(out), "--rate", RATE]).returncode == 0:
-            return out
+    if speak(text, str(out)):
+        return out
     raise RuntimeError(f"配音失败：{text}")
 
 
