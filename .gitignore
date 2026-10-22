@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+.work/
+media/
+*.mp4
+!assets/*.mp4
+*.wav
+*.mp3
+*.m4a
+草稿.mp4
+检查.png

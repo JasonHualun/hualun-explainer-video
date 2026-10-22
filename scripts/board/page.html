@@ -1,0 +1,112 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#3b4148;width:1280px;height:720px;overflow:hidden}
+  #sub{position:absolute;left:90px;right:90px;top:634px;height:80px;display:flex;align-items:center;justify-content:center;
+       text-align:center;color:#eef0f2;font:24px/1.35 "HanziPen SC","PingFang SC";letter-spacing:1px}
+</style></head>
+<body>
+<svg width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#fdfdfb"/><stop offset="1" stop-color="#eceeee"/></radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="shadow"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity=".25"/></filter>
+  </defs>
+  <rect x="30" y="20" width="1220" height="602" rx="4" fill="url(#g)" stroke="#c9ccd1" stroke-width="8"/>
+  <g filter="url(#blur)" opacity=".22">
+    <ellipse cx="300" cy="260" rx="200" ry="40" fill="#dfe2e6"/>
+    <ellipse cx="900" cy="420" rx="260" ry="50" fill="#e3e5e9"/>
+    <ellipse cx="1000" cy="150" rx="140" ry="30" fill="#e1e3e7"/>
+  </g>
+  <rect x="80" y="622" width="1120" height="8" fill="#b8bcc2"/>
+  <g id="ink" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+  <g id="eraser" filter="url(#shadow)" visibility="hidden">
+    <rect x="-60" y="-28" width="120" height="40" rx="8" fill="#5b4636"/>
+    <rect x="-60" y="10" width="120" height="16" rx="4" fill="#d9d6cf"/>
+  </g>
+  <g id="pen" filter="url(#shadow)">
+    <g transform="rotate(35)">
+      <path d="M0 0 L-6 -16 L6 -16 Z" id="tip"/>
+      <rect x="-9" y="-30" width="18" height="14" rx="2" fill="#d9dce0"/>
+      <rect x="-11" y="-118" width="22" height="90" rx="6" fill="#f4f5f7" stroke="#a3a8b0" stroke-width="1.5"/>
+      <rect x="-12" y="-126" width="24" height="34" rx="6" id="cap"/>
+    </g>
+  </g>
+</svg>
+<div id="sub"></div>
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const REST = { x: 1330, y: 760 };   // 不写字时笔停在画外右下角
+let S = [], SUBS = [], ERASES = [];
+const $ = id => document.getElementById(id);
+
+window.boot = (plan) => {
+  S = plan.strokes; SUBS = plan.subs; ERASES = plan.erases;
+  for (const s of S) {
+    let el;
+    if (s.font) {            // 没有笔画数据的字：用手写字体，随进度显现
+      el = document.createElementNS(NS, "text");
+      el.setAttribute("x", s.x); el.setAttribute("y", s.y + s.size * 0.85);
+      el.setAttribute("font-size", s.size); el.setAttribute("font-family", "HanziPen SC");
+      el.setAttribute("fill", s.color); el.textContent = s.font; el.style.opacity = 0;
+      s.a = { x: s.x, y: s.y + s.size * 0.6 }; s.b = { x: s.x + s.size, y: s.y + s.size * 0.6 };
+    } else {
+      el = document.createElementNS(NS, "path");
+      el.setAttribute("d", s.d); el.setAttribute("stroke", s.color); el.setAttribute("stroke-width", s.w);
+      $("ink").appendChild(el);
+      s.len = el.getTotalLength() + 0.01;
+      el.style.strokeDasharray = s.len; el.style.strokeDashoffset = s.len;
+      s.a = el.getPointAtLength(0); s.b = el.getPointAtLength(s.len);
+    }
+    if (s.font) $("ink").appendChild(el);
+    s.el = el; s.last = -1; s.gone = false;
+  }
+  return true;
+};
+
+function setProgress(s, f) {
+  if (f === s.last) return;
+  s.last = f;
+  if (s.font) s.el.style.opacity = f;
+  else s.el.style.strokeDashoffset = s.len * (1 - f);
+}
+
+window.render = (t) => {
+  // 笔画进度 + 擦除
+  let active = null, prev = null, next = null;
+  for (const s of S) {
+    const gone = s.eraseAt != null && t >= s.eraseAt;
+    if (gone !== s.gone) { s.el.style.visibility = gone ? "hidden" : "visible"; s.gone = gone; }
+    setProgress(s, Math.min(Math.max((t - s.t0) / (s.t1 - s.t0), 0), 1));
+    if (t >= s.t0 && t <= s.t1) active = s;
+    else if (s.t1 < t && (!prev || s.t1 > prev.t1)) prev = s;
+    else if (s.t0 > t && (!next || s.t0 < next.t0)) next = s;
+  }
+  // 笔的位置
+  let pos, color, lift = 0;
+  if (active) {
+    pos = active.font ? { x: active.a.x + (active.b.x - active.a.x) * active.last, y: active.a.y } : active.el.getPointAtLength(active.len * active.last);
+    color = active.color;
+  } else {
+    const from = prev && t - prev.t1 < 0.6 ? prev.b : REST, to = next && next.t0 - t < 0.6 ? next.a : REST;
+    const t0 = prev && t - prev.t1 < 0.6 ? prev.t1 : (next ? next.t0 - 0.6 : t), t1 = next && next.t0 - t < 0.6 ? next.t0 : (prev ? prev.t1 + 0.6 : t);
+    const k = t1 > t0 ? Math.min(Math.max((t - t0) / (t1 - t0), 0), 1) : 1;
+    const e = k * k * (3 - 2 * k);
+    pos = { x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e };
+    lift = Math.sin(k * Math.PI); color = (next || prev || { color: "#1f2328" }).color;
+  }
+  $("pen").setAttribute("transform", `translate(${pos.x + lift * 4},${pos.y - lift * 8})`);
+  $("cap").setAttribute("fill", color); $("tip").setAttribute("fill", color);
+  // 板擦
+  const er = ERASES.find(e => t >= e.t && t <= e.t + e.dur);
+  if (er) {
+    const k = (t - er.t) / er.dur, cy = (er.y0 + er.y1) / 2, ry = Math.max(10, (er.y1 - er.y0) / 2 - 20);
+    const x = er.x0 + 30 + (er.x1 - er.x0 - 60) * k, y = cy + Math.sin(k * Math.PI * 5) * ry;
+    $("eraser").setAttribute("transform", `translate(${x},${y}) rotate(-8)`); $("eraser").setAttribute("visibility", "visible");
+  } else $("eraser").setAttribute("visibility", "hidden");
+  // 字幕
+  const sub = SUBS.find(u => t >= u.t && t < u.t + u.dur);
+  const txt = sub ? sub.text : "";
+  if ($("sub").textContent !== txt) $("sub").textContent = txt;
+};
+</script></body></html>
